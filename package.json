@@ -1,0 +1,29 @@
+{
+  "name": "blockchain_js",
+  "version": "0.1.0",
+  "description": "blockchain in js, only for 1 network",
+  "main": "blockchain.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/El-Chapo0133/blockchain_js.git"
+  },
+  "keywords": [
+    "js",
+    "nodejs",
+    "blockchain"
+  ],
+  "author": "Loris Levêque",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/El-Chapo0133/blockchain_js/issues"
+  },
+  "homepage": "https://github.com/El-Chapo0133/blockchain_js#readme",
+  "devDependencies": {
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "node-cron": "^2.0.3"
+  }
+}
