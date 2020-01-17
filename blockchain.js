@@ -209,7 +209,7 @@ function replaceChain(newChain) {
 		// idk why, but i have to do it
 	} else {
 		return;
-	}
+	}  
 }
 function save() {
 	const obj = {
