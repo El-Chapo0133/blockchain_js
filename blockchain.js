@@ -6,7 +6,6 @@ var bodyParse	= require('body-parser');
 var fs 			= require('fs');
 var cron 		= require('node-cron');
 var os          = require('os');
-var interfaces  = os.networkInterfaces();
 
 
 var Block = /** class */ (function() {
@@ -223,16 +222,16 @@ function save() {
 	})
 }
 function getLocalIp() {
-    var t_ip;
+    var interfaces  = os.networkInterfaces();
     Object.keys(interfaces).forEach((interface_name) => {
         interfaces[interface_name].forEach((iface) => {
-            // use only IPv6
-            if (iface.family === "IPv6") {
+            // use only IPv4
+            if (iface.family === "IPv4") {
                 // use wi-fi before eth
                 if (interface_name === "wlp3s0") {
-                    t_ip = iface.address;
+                    return iface.address;
                 } else {
-                    t_ip = iface.address;
+                    return iface.address;
                 }
             }
         })
@@ -260,4 +259,4 @@ router.get('/', (request, response) => {
 app.listen("8080", getLocalIp(), (err) => {
     if (err)
         throw(err)
-})
+});
