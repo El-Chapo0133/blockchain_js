@@ -1,5 +1,12 @@
 /**
  * Node app
+ * Blockchain with node-js
+ * *******************************************
+ * Author   : Loris Levêque
+ * Date     : 17.01.2020
+ * *******************************************
+ * Description : Simple blockchain with nodejs
+ * *******************************************
  */
 var express 	= require('express');
 var bodyParse	= require('body-parser');
