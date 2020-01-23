@@ -1,6 +1,6 @@
 {
   "name": "blockchain_js",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "blockchain in js, only for 1 network",
   "main": "blockchain.js",
   "scripts": {

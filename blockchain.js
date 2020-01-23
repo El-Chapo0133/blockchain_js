@@ -183,7 +183,7 @@ var BufferBlock = (function() {
 
 function generateGenesis(bufferBlock) {
 	var timestamp = new Date().getTime() / 1000;
-	hasher.createHash(`genesisblock-${timestamp}`, bufferBlock).then((hash) => {
+	hasher.createHash(`GENESIS BLOCK!-${timestamp}`, bufferBlock).then((hash) => {
         appendBlock(new Block(0, "GENESIS BLOCK!", timestamp, hash, "0"));
     });
 }
@@ -191,12 +191,13 @@ function generateNextBlock(id, data, timestamp, hash, previousHash) {
 	// id - data - timestamp - hash - previous hash
 	return new Block(id, data, timestamp, hash, previousHash);
 }
-function createBlock(data) {
+async function createBlock(data, callback) {
 	const LASTBLOCK = getLastBlock();
 	var timestamp = new Date().getTime() / 1000;
 	var nextId = LASTBLOCK.id + 1;
-	hasher.createHash(`${nextId}-${LASTBLOCK.hash}-${timestamp}-${data}`, bufferData);
-	generateNextBlock(nextId, data, timestamp, bufferData.get(), LASTBLOCK.hash);
+	hasher.createHash(`${nextId}-${LASTBLOCK.hash}-${timestamp}-${data}`, bufferData).then((hash) => {
+        callback(generateNextBlock(nextId, data, timestamp, hash, LASTBLOCK.hash));
+    });
 }
 function getLastBlock() {
 	return blockchain[blockchain.length - 1];
@@ -216,7 +217,7 @@ var blockchain = [];
 generateGenesis();
 
 function isBlockValid(block, previousBlock) {
-	if (block.id != previousBlock.id - 1) {
+	if (block.id !== (previousBlock.id + 1)) {
 		console.log("id incorrect");
 		return false;
 	} else if (block.previousHash != previousBlock.hash) {
@@ -227,18 +228,19 @@ function isBlockValid(block, previousBlock) {
 		return true;
 	}
 }
-function isHashCorrect(block, hash) {
-    hasher.createHash(`${block.id}-${block.previousHash}-${block.timestamp}-${block.data}`).then((hash_new) => {
-    	if (hash_new !== hash) {
+async function isHashCorrect(block, hash) {
+    hasher.createHash(`${block.id}-${block.previousHash}-${block.timeStamp}-${block.data}`).then((hash_new) => {
+       	if (hash_new == hash) {
     		return true;
     	} else {
     		return false;
     	}
     });
 }
-function isGenesisCorrect(block) {
-    hasher.createHash(`${block.data}-${block.timestamp}`).then((hash_new) => {
-        if (hash_new !== hash) {
+async function isGenesisCorrect() {
+    var genesis = getGenesisBlock();
+    hasher.createHash(`${genesis.data}-${genesis.timeStamp}`).then((hash_new) => {
+        if (hash_new === block.hash) {
             return true;
         } else {
             return false;
@@ -295,16 +297,22 @@ cron.schedule("0 * * * *", () => {
 });
 
 var app = express();
+app.use(bodyParse.urlencoded({extended: true}));
+app.use(bodyParse.json());
 // draw chain with a webpage
 app.get('/', (request, response) => {
-    var genesis = getGenesisBlock();
-
-    console.log(isGenesisCorrect(genesis));
-
 	response.writeHead(200, {'Content-Type': 'application/json'});
 	response.write(JSON.stringify(blockchain));
 	response.end();
 });
+app.post('/mining', (request, response) => {
+    const data = request.body.data;
+    createBlock(data, (block) => {
+        if (isBlockValid(block, getLastBlock()) && isHashCorrect(block, block.hash)) {
+            appendBlock(block);
+        }
+    });
+})
 app.listen("8080", getLocalIp(), (err) => {
     if (err)
         throw(err)
