@@ -15,21 +15,46 @@ var cron 		= require('node-cron');
 var os          = require('os');
 
 
-var Block = /** class */ (function() {
+/*var Block = (function() {
 	var _this = this;
 	function Block(id, data, timestamp, hash, previousHash) {
 		_this.id = id;
 		_this.data = data;
-		_this.timeStamp = timeStamp;
+		_this.timeStamp = timestamp;
 		_this.hash = hash;
 		_this.previousHash = previousHash;
 	}
+    Block.prototype.id = () => {
+        return _this.id;
+    }
+    Block.prototype.data = () => {
+        return _this.data;
+    }
+    Block.prototype.timestamp = () => {
+        return _this.timestamp;
+    }
+    Block.prototype.hash = () => {
+        return _this.hash;
+    }
+    Block.prototype.previousHash = () => {
+        return _this.previousHash;
+    }
 	return Block;
-}());
+}());*/
+
+class Block {
+    constructor(id, data, timestamp, hash, previousHash) {
+        this.id = id;
+        this.data = data;
+        this.timeStamp = timestamp;
+        this.hash = hash;
+        this.previousHash = previousHash;
+    }
+}
 var Hasher = /** @class */ (function () {
     function Hasher() {
         var _this = this;
-        this.NBCHAR = 20;
+        this.NBCHAR = 40;
         this.STARTUP = "$21%";
         this.isLastIndex = function (index, array) {
             if (index == array.length - 1)
@@ -59,19 +84,22 @@ var Hasher = /** @class */ (function () {
                 return false;
         };
         this.isUndefined = function(input) {
-        	if (input == "undefined")
+        	if (input == undefined)
         		return true;
         	else
         		return false;
         };
-        this.createHash = function (input, buffer) {
+        this.createHash = async function (input, buffer) {
             var output;
             var arrayToInt = _this.convertArrayToInt(input);
             var arrayCrypted = _this.NlogNOne(arrayToInt);
-            output = _this.convertArrayToInt(_this.STARTUP + _this["finally"](_this.convertArrayToString(arrayCrypted)));
-            if (!this.isUndefined(buffer))
-            	buffer.set(output);
-            return _this.convertArrayToString(output);
+            /*this.convertArrayToInt(_this.STARTUP + _this["finally"](_this.convertArrayToString(arrayCrypted))).then((result) => {
+                if (!this.isUndefined(buffer))
+                	buffer.set(result);
+                console.log(result);
+                return _this.convertArrayToString(result);
+            });*/
+            return (_this.STARTUP + _this["finally"](arrayCrypted));
         };
         this.convertArrayToInt = function (array) {
             var output = [];
@@ -82,7 +110,7 @@ var Hasher = /** @class */ (function () {
         };
         this.convertArrayToString = function (array) {
             var output = "";
-            array.map(function (cell) {
+            array.forEach(function (cell) {
                 while (cell < 32) {
                     cell *= 2;
                 }
@@ -140,7 +168,7 @@ var BufferData = (function() {
 		return this.data;
 	}
 	return BufferData;
-}()):
+}());
 var BufferBlock = (function() {
 	function BufferBlock() {
 		this.block = null;
@@ -152,10 +180,12 @@ var BufferBlock = (function() {
 	return BufferBlock;
 }());
 
-function generateGenesis() {
+function generateGenesis(bufferBlock) {
 	var timestamp = new Date().getTime() / 1000;
-	var hash = hasher.calculateHash("genesisblock");
-	return new Block(0, "GENESIS BLOCK!", timestamp, hash, "0");
+	var hash = hasher.createHash("genesisblock", bufferBlock).then((hash) => {
+        console.log("hash made");
+        appendBlock(new Block(0, "GENESIS BLOCK!", timestamp, hash, "0"));
+    });
 }
 function generateNextBlock(id, data, timestamp, hash, previousHash) {
 	// id - data - timestamp - hash - previous hash
@@ -165,7 +195,7 @@ function createBlock(data) {
 	const LASTBLOCK = getLastBlock();
 	var timestamp = new Date().getTime() / 1000;
 	var nextId = LASTBLOCK.id + 1;
-	hasher.calculateHash(`${nextId}-${LASTBLOCK.hash}-${timestamp}-${data}`, bufferData);
+	hasher.createHash(`${nextId}-${LASTBLOCK.hash}-${timestamp}-${data}`, bufferData);
 	generateNextBlock(nextId, data, timestamp, bufferData.get(), LASTBLOCK.hash);
 }
 function getLastBlock() {
@@ -179,9 +209,11 @@ function appendBlock(block) {
 }
 
 var bufferData = new BufferData();
+var bufferBlock = new BufferBlock();
 var hasher = new Hasher();
 
-var blockchain = [generateGenesis()];
+var blockchain = [];
+generateGenesis();
 
 function isBlockValid(block, previousBlock) {
 	if (block.id != previousBlock.id - 1) {
@@ -203,10 +235,10 @@ function isHashCorrect(block, hash) {
 	}
 }
 function isChainValid(chain) {
-	foreach(block in chain) {
+	chain.forEach((block) => {
 		if (!isBlockValid(block) || !isHashCorrect(block, block.hash))
 			return false;
-	}
+	});
 	return true;
 }
 function replaceChain(newChain) {
@@ -221,7 +253,7 @@ function replaceChain(newChain) {
 function save() {
 	const obj = {
 		timestamp: new Date().getTime() / 1000,
-		chain: blockchain
+		chain: JSON.stringify(blockchain)
 	}
 	fs.writeFile("save.json", JSON.stringify(obj), (err) => {
 		if (err)
@@ -229,6 +261,7 @@ function save() {
 	})
 }
 function getLocalIp() {
+    return "127.0.0.1";
     var interfaces  = os.networkInterfaces();
     Object.keys(interfaces).forEach((interface_name) => {
         interfaces[interface_name].forEach((iface) => {
@@ -241,8 +274,8 @@ function getLocalIp() {
                     return iface.address;
                 }
             }
-        })
-    }
+        });
+    });
 }
 
 // save every hour
@@ -252,18 +285,15 @@ cron.schedule("0 * * * *", () => {
 
 var app = express();
 // draw chain with a webpage
-var router = express.Router();
-express.use(router);
-router.use((request, response, next) => {
-	// middleware
-	next();
-});
-router.get('/', (request, response) => {
-	response.writeHead(200, {'Content-Type': 'text/plain'});
-	response.write(blockchain.toString());
+app.get('/', (request, response) => {
+	response.writeHead(200, {'Content-Type': 'application/json'});
+	response.write(JSON.stringify(blockchain));
 	response.end();
 });
 app.listen("8080", getLocalIp(), (err) => {
     if (err)
         throw(err)
+    else {
+        console.log(`reading for web request on ${getLocalIp()}:8080`);
+    }
 });
