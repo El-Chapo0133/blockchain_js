@@ -183,8 +183,7 @@ var BufferBlock = (function() {
 
 function generateGenesis(bufferBlock) {
 	var timestamp = new Date().getTime() / 1000;
-	var hash = hasher.createHash("genesisblock", bufferBlock).then((hash) => {
-        console.log("hash made");
+	hasher.createHash(`genesisblock-${timestamp}`, bufferBlock).then((hash) => {
         appendBlock(new Block(0, "GENESIS BLOCK!", timestamp, hash, "0"));
     });
 }
