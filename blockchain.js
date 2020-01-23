@@ -228,11 +228,22 @@ function isBlockValid(block, previousBlock) {
 	}
 }
 function isHashCorrect(block, hash) {
-	if (hasher.createHash(`${block.id}-${block.previousHash}-${block.timestamp}-${block.data}`) !== hash) {
-		return true;
-	} else {
-		return false;
-	}
+    hasher.createHash(`${block.id}-${block.previousHash}-${block.timestamp}-${block.data}`).then((hash_new) => {
+    	if (hash_new !== hash) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    });
+}
+function isGenesisCorrect(block) {
+    hasher.createHash(`${block.data}-${block.timestamp}`).then((hash_new) => {
+        if (hash_new !== hash) {
+            return true;
+        } else {
+            return false;
+        }
+    });
 }
 function isChainValid(chain) {
 	chain.forEach((block) => {
@@ -286,6 +297,10 @@ cron.schedule("0 * * * *", () => {
 var app = express();
 // draw chain with a webpage
 app.get('/', (request, response) => {
+    var genesis = getGenesisBlock();
+
+    console.log(isGenesisCorrect(genesis));
+
 	response.writeHead(200, {'Content-Type': 'application/json'});
 	response.write(JSON.stringify(blockchain));
 	response.end();
