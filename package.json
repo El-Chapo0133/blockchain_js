@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/El-Chapo0133/blockchain_js#readme",
   "devDependencies": {
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "fs": "0.0.1-security",
     "node-cron": "^2.0.3"
   }
